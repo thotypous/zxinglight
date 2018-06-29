@@ -94,8 +94,13 @@ static PyObject* zxing_read_codes(PyObject *self, PyObject *args) {
     int width, height, barcode_type;
     int try_harder, hybrid;
 
+#if PY_MAJOR_VERSION >= 3
     if (!PyArg_ParseTuple(args, "Siiipp", &python_image, &width, &height, &barcode_type,
                           &try_harder, &hybrid)) {
+#else
+    if (!PyArg_ParseTuple(args, "Siiiii", &python_image, &width, &height, &barcode_type,
+                          &try_harder, &hybrid)) {
+#endif
         return NULL;
     }
 
@@ -126,6 +131,7 @@ static PyMethodDef zxinglight_functions[] = {
     { NULL }
 };
 
+#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef zxinglight_moduledef = {
     PyModuleDef_HEAD_INIT,
     "_zxinglight",
@@ -133,7 +139,19 @@ static struct PyModuleDef zxinglight_moduledef = {
     -1,
     zxinglight_functions,
 };
+#endif
 
-PyMODINIT_FUNC PyInit__zxinglight(void) {
+#if PY_MAJOR_VERSION >= 3
+    #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
+#else
+    #define MOD_INIT(name) PyMODINIT_FUNC init##name(void)
+#endif
+
+MOD_INIT(_zxinglight) {
+#if PY_MAJOR_VERSION >= 3
     return PyModule_Create(&zxinglight_moduledef);
+#else
+    Py_InitModule3("_zxinglight",
+        zxinglight_functions, NULL);
+#endif
 }
