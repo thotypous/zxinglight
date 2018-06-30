@@ -36,7 +36,8 @@ static void log_error(const string &msg) {
 }
 
 static vector<string> *_zxing_read_codes(char *image, int image_size, int width, int height,
-                                         int barcode_type, bool try_harder, bool hybrid) {
+                                         int barcode_type, bool try_harder, bool hybrid,
+                                         bool search_multi) {
     try {
         ArrayRef<char> data = ArrayRef<char>(image, image_size);
 
@@ -66,8 +67,13 @@ static vector<string> *_zxing_read_codes(char *image, int image_size, int width,
         Ref<BinaryBitmap> bitmap(new BinaryBitmap(binarizer));
 
         MultiFormatReader delegate;
-        GenericMultipleBarcodeReader reader(delegate);
-        vector<Ref<Result> > results = reader.decodeMultiple(bitmap, hints);
+        vector<Ref<Result> > results;
+        if (search_multi) {
+            GenericMultipleBarcodeReader reader(delegate);
+            results = reader.decodeMultiple(bitmap, hints);
+        } else {
+            results = vector<Ref<Result> >(1, delegate.decode(bitmap, hints));
+        }
 
         vector<string> *codes = new vector<string>();
 
@@ -92,14 +98,14 @@ static vector<string> *_zxing_read_codes(char *image, int image_size, int width,
 static PyObject* zxing_read_codes(PyObject *self, PyObject *args) {
     PyObject *python_image;
     int width, height, barcode_type;
-    int try_harder, hybrid;
+    int try_harder, hybrid, search_multi;
 
 #if PY_MAJOR_VERSION >= 3
-    if (!PyArg_ParseTuple(args, "Siiipp", &python_image, &width, &height, &barcode_type,
-                          &try_harder, &hybrid)) {
+    if (!PyArg_ParseTuple(args, "Siiippp", &python_image, &width, &height, &barcode_type,
+                          &try_harder, &hybrid, &search_multi)) {
 #else
-    if (!PyArg_ParseTuple(args, "Siiiii", &python_image, &width, &height, &barcode_type,
-                          &try_harder, &hybrid)) {
+    if (!PyArg_ParseTuple(args, "Siiiiii", &python_image, &width, &height, &barcode_type,
+                          &try_harder, &hybrid, &search_multi)) {
 #endif
         return NULL;
     }
@@ -110,7 +116,7 @@ static PyObject* zxing_read_codes(PyObject *self, PyObject *args) {
     PyBytes_AsStringAndSize(python_image, &image, &image_size);
 
     vector<string> *results = _zxing_read_codes(
-        image, image_size, width, height, barcode_type, try_harder, hybrid
+        image, image_size, width, height, barcode_type, try_harder, hybrid, search_multi
         );
 
     PyObject *codes = PyList_New(0);

@@ -67,7 +67,7 @@ class BarcodeType(IntEnum):
     UPC_EAN_EXTENSION = 17
 
 
-def read_codes(image, barcode_type=BarcodeType.NONE, try_harder=False, hybrid=False):
+def read_codes(image, barcode_type=BarcodeType.NONE, try_harder=False, hybrid=False, search_multi=False):
     """
     Reads codes from a PIL Image.
 
@@ -96,4 +96,4 @@ def read_codes(image, barcode_type=BarcodeType.NONE, try_harder=False, hybrid=Fa
     raw_image = grayscale_image.tobytes()
     width, height = grayscale_image.size
 
-    return zxing_read_codes(raw_image, width, height, barcode_type, try_harder, hybrid)
+    return zxing_read_codes(raw_image, width, height, barcode_type, try_harder, hybrid, search_multi)
